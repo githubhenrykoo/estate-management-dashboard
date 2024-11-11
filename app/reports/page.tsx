@@ -9,9 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 // Mock data - replace with actual data fetching in a real application
 const properties = [
-  { id: 'PROP001', address: '123 Main St', owner: 'John Doe' },
-  { id: 'PROP002', address: '456 Elm St', owner: 'Jane Smith' },
-  { id: 'PROP003', address: '789 Oak St', owner: 'Bob Johnson' },
+  { id: 'PROP001', address: '123 Main St', owner: 'John Doe', group: 'Group A', company: 'Company X' },
+  { id: 'PROP002', address: '456 Elm St', owner: 'Jane Smith', group: 'Group B', company: 'Company Y' },
+  { id: 'PROP003', address: '789 Oak St', owner: 'Bob Johnson', group: 'Group A', company: 'Company X' },
 ]
 
 const payments = [
@@ -73,7 +73,7 @@ function MonthlyReport({ month }: { month: string }) {
   )
 }
 
-function PerPropertyReport({ propertyId }: { propertyId: string }) {
+function IndividualReport({ propertyId }: { propertyId: string }) {
   const propertyPayments = payments.filter(payment => payment.propertyId === propertyId)
   const property = properties.find(p => p.id === propertyId)
   const totalDue = propertyPayments.reduce((sum, payment) => sum + payment.amountDue, 0)
@@ -83,9 +83,17 @@ function PerPropertyReport({ propertyId }: { propertyId: string }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Per-Property Report - {property?.address}</CardTitle>
+        <CardTitle>Individual Report - {property?.address}</CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold">Property Details</h3>
+          <p>ID: {property?.id}</p>
+          <p>Address: {property?.address}</p>
+          <p>Owner: {property?.owner}</p>
+          <p>Group: {property?.group}</p>
+          <p>Company: {property?.company}</p>
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
@@ -122,6 +130,57 @@ function PerPropertyReport({ propertyId }: { propertyId: string }) {
               <TableCell>{averagePercentagePaid.toFixed(2)}%</TableCell>
               <TableCell>-</TableCell>
             </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  )
+}
+
+function ConsolidatedReport({ level }: { level: 'company' | 'group' }) {
+  const consolidatedData = properties.reduce((acc, property) => {
+    const key = property[level]
+    if (!acc[key]) {
+      acc[key] = { totalDue: 0, totalPaid: 0, properties: [] }
+    }
+    const propertyPayments = payments.filter(payment => payment.propertyId === property.id)
+    const propertyTotalDue = propertyPayments.reduce((sum, payment) => sum + payment.amountDue, 0)
+    const propertyTotalPaid = propertyPayments.reduce((sum, payment) => sum + payment.amountPaid, 0)
+    acc[key].totalDue += propertyTotalDue
+    acc[key].totalPaid += propertyTotalPaid
+    acc[key].properties.push(property)
+    return acc
+  }, {} as Record<string, { totalDue: number, totalPaid: number, properties: typeof properties }>)
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Consolidated {level.charAt(0).toUpperCase() + level.slice(1)} Report</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{level.charAt(0).toUpperCase() + level.slice(1)}</TableHead>
+              <TableHead>Number of Properties</TableHead>
+              <TableHead>Total Due</TableHead>
+              <TableHead>Total Paid</TableHead>
+              <TableHead>Collection Percentage</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Object.entries(consolidatedData).map(([key, data], index) => {
+              const collectionPercentage = (data.totalPaid / data.totalDue) * 100
+              return (
+                <TableRow key={index}>
+                  <TableCell>{key}</TableCell>
+                  <TableCell>{data.properties.length}</TableCell>
+                  <TableCell>${data.totalDue}</TableCell>
+                  <TableCell>${data.totalPaid}</TableCell>
+                  <TableCell>{collectionPercentage.toFixed(2)}%</TableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
       </CardContent>
@@ -181,6 +240,7 @@ function OverallReport() {
 export default function ReportsPage() {
   const [selectedMonth, setSelectedMonth] = useState(months[0])
   const [selectedProperty, setSelectedProperty] = useState(properties[0].id)
+  const [consolidationLevel, setConsolidationLevel] = useState<'company' | 'group'>('company')
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -191,7 +251,8 @@ export default function ReportsPage() {
         <Tabs defaultValue="monthly" className="space-y-4">
           <TabsList>
             <TabsTrigger value="monthly">Monthly Report</TabsTrigger>
-            <TabsTrigger value="property">Per-Property Report</TabsTrigger>
+            <TabsTrigger value="individual">Individual Report</TabsTrigger>
+            <TabsTrigger value="consolidated">Consolidated Report</TabsTrigger>
             <TabsTrigger value="overall">Overall Report</TabsTrigger>
           </TabsList>
 
@@ -211,7 +272,7 @@ export default function ReportsPage() {
             <MonthlyReport month={selectedMonth} />
           </TabsContent>
 
-          <TabsContent value="property">
+          <TabsContent value="individual">
             <div className="mb-4">
               <Select value={selectedProperty} onValueChange={setSelectedProperty}>
                 <SelectTrigger className="w-[180px]">
@@ -224,7 +285,22 @@ export default function ReportsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <PerPropertyReport propertyId={selectedProperty} />
+            <IndividualReport propertyId={selectedProperty} />
+          </TabsContent>
+
+          <TabsContent value="consolidated">
+            <div className="mb-4">
+              <Select value={consolidationLevel} onValueChange={(value: 'company' | 'group') => setConsolidationLevel(value)}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select consolidation level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="company">Company</SelectItem>
+                  <SelectItem value="group">Group</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <ConsolidatedReport level={consolidationLevel} />
           </TabsContent>
 
           <TabsContent value="overall">

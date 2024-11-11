@@ -4,19 +4,22 @@ import { useState } from 'react'
 import { Header } from "@/components/header"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ChevronDown, ChevronRight } from "lucide-react"
+import Image from "next/image"
 
 interface Complaint {
   id: string;
   category: string;
   description: string;
   date: string;
-  status: 'pending' | 'solved';
+  status: 'pending' | 'resolved';
+  attachments?: string[];
 }
 
 const categories = [
@@ -31,31 +34,71 @@ const categories = [
 
 const initialComplaints: Complaint[] = [
   { id: '1', category: "Maintenance Issues", description: "Leaking faucet in kitchen", date: "2023-06-01", status: "pending" },
-  { id: '2', category: "Noise Complaints", description: "Loud music from apartment 3B", date: "2023-06-02", status: "solved" },
+  { id: '2', category: "Noise Complaints", description: "Loud music from apartment 3B", date: "2023-06-02", status: "resolved" },
   { id: '3', category: "Security and Safety", description: "Broken lock on main entrance", date: "2023-06-03", status: "pending" },
   { id: '4', category: "Parking Problems", description: "Car parked in no-parking zone", date: "2023-06-04", status: "pending" },
-  { id: '5', category: "Community Rules Violations", description: "Unauthorized pet in building", date: "2023-06-05", status: "solved" },
+  { id: '5', category: "Community Rules Violations", description: "Unauthorized pet in building", date: "2023-06-05", status: "resolved" },
   { id: '6', category: "Property Value Concerns", description: "Unkempt landscaping", date: "2023-06-06", status: "pending" },
   { id: '7', category: "Environmental Issues", description: "Improper waste disposal", date: "2023-06-07", status: "pending" },
 ]
 
+function ComplaintDetailsDialog({ complaint }: { complaint: Complaint }) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">View Details</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Complaint Details</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4">
+          <div>
+            <Label className="font-bold">Category</Label>
+            <p>{complaint.category}</p>
+          </div>
+          <div>
+            <Label className="font-bold">Description</Label>
+            <p>{complaint.description}</p>
+          </div>
+          <div>
+            <Label className="font-bold">Date</Label>
+            <p>{complaint.date}</p>
+          </div>
+          <div>
+            <Label className="font-bold">Status</Label>
+            <p>{complaint.status}</p>
+          </div>
+          <div>
+            <Label className="font-bold">Image</Label>
+            <Image src="/app/images/30183858_l-scaled.jpg" alt="Complaint Image" width={300} height={200} />
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export default function ComplaintsPage() {
   const [complaints, setComplaints] = useState<Complaint[]>(initialComplaints)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null)
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([])
+  const [showResolved, setShowResolved] = useState(false)
 
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value)
+  const toggleCategory = (category: string) => {
+    setExpandedCategories(prev =>
+      prev.includes(category)
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    )
   }
 
-  const filteredComplaints = complaints.filter(complaint =>
-    (complaint.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     complaint.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     complaint.date.includes(searchTerm) ||
-     complaint.status.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (!selectedCategory || complaint.category === selectedCategory)
-  )
+  const getCategoryStats = (category: string) => {
+    const categoryComplaints = complaints.filter(c => c.category === category)
+    const total = categoryComplaints.length
+    const resolved = categoryComplaints.filter(c => c.status === 'resolved').length
+    const outstanding = total - resolved
+    return { total, resolved, outstanding }
+  }
 
   const handleSubmitComplaint = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -65,7 +108,8 @@ export default function ComplaintsPage() {
       category: formData.get('category') as string,
       description: formData.get('description') as string,
       date: new Date().toISOString().split('T')[0],
-      status: 'pending'
+      status: 'pending',
+      attachments: formData.get('attachments') ? [formData.get('attachments') as string] : undefined
     }
     setComplaints([newComplaint, ...complaints])
   }
@@ -76,25 +120,7 @@ export default function ComplaintsPage() {
       <main className="flex-grow container mx-auto p-4">
         <h1 className="text-3xl font-bold mb-6">Complaints Management</h1>
         
-        <div className="mb-6 flex flex-col md:flex-row gap-4">
-          <Input
-            type="text"
-            placeholder="Search complaints..."
-            value={searchTerm}
-            onChange={handleSearch}
-            className="flex-grow"
-          />
-          <Select value={selectedCategory || 'all'} onValueChange={(value) => setSelectedCategory(value === 'all' ? null : value)}>
-            <SelectTrigger className="w-full md:w-[200px]">
-              <SelectValue placeholder="Filter by category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>{category}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="mb-6 flex justify-between items-center">
           <Dialog>
             <DialogTrigger asChild>
               <Button>Submit New Complaint</Button>
@@ -121,44 +147,84 @@ export default function ComplaintsPage() {
                   <Label htmlFor="description">Description</Label>
                   <Textarea id="description" name="description" required />
                 </div>
+                <div>
+                  <Label htmlFor="attachments">Attachments</Label>
+                  <Input id="attachments" name="attachments" type="file" accept="image/*" multiple />
+                </div>
                 <Button type="submit">Submit Complaint</Button>
               </form>
             </DialogContent>
           </Dialog>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="showResolved"
+              checked={showResolved}
+              onCheckedChange={(checked) => setShowResolved(checked as boolean)}
+            />
+            <Label htmlFor="showResolved">Show Resolved Complaints</Label>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredComplaints.map((complaint) => (
-            <Card key={complaint.id}>
-              <CardHeader>
-                <CardTitle>{complaint.category}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-2">
-                  {complaint.date} | {complaint.status}
-                </p>
-                <p className="line-clamp-3">{complaint.description}</p>
-              </CardContent>
-              <CardFooter>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" onClick={() => setSelectedComplaint(complaint)}>View More</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{selectedComplaint?.category}</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-2">
-                      <p><strong>Date:</strong> {selectedComplaint?.date}</p>
-                      <p><strong>Status:</strong> {selectedComplaint?.status}</p>
-                      <p><strong>Description:</strong> {selectedComplaint?.description}</p>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Category</TableHead>
+              <TableHead>Total</TableHead>
+              <TableHead>Resolved</TableHead>
+              <TableHead>Outstanding</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {categories.map((category) => {
+              const { total, resolved, outstanding } = getCategoryStats(category)
+              const isExpanded = expandedCategories.includes(category)
+              return (
+                <>
+                  <TableRow key={category} className="cursor-pointer" onClick={() => toggleCategory(category)}>
+                    <TableCell className="font-medium">
+                      {isExpanded ? <ChevronDown className="inline mr-2" /> : <ChevronRight className="inline mr-2" />}
+                      {category}
+                    </TableCell>
+                    <TableCell>{total}</TableCell>
+                    <TableCell>{resolved}</TableCell>
+                    <TableCell>{outstanding}</TableCell>
+                  </TableRow>
+                  {isExpanded && (
+                    <TableRow>
+                      <TableCell colSpan={4}>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Date</TableHead>
+                              <TableHead>Description</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {complaints
+                              .filter(c => c.category === category)
+                              .filter(c => showResolved || c.status === 'pending')
+                              .map((complaint) => (
+                                <TableRow key={complaint.id}>
+                                  <TableCell>{complaint.date}</TableCell>
+                                  <TableCell>{complaint.description}</TableCell>
+                                  <TableCell>{complaint.status}</TableCell>
+                                  <TableCell>
+                                    <ComplaintDetailsDialog complaint={complaint} />
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                          </TableBody>
+                        </Table>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
+              )
+            })}
+          </TableBody>
+        </Table>
       </main>
     </div>
   )

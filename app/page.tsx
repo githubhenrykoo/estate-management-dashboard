@@ -8,7 +8,6 @@ import { UserApprovalDashboard } from "@/components/user-approval-dashboard"
 import { FeeAssignmentDashboard } from "@/components/fee-assignment-dashboard"
 import { ComplaintsDashboard } from "@/components/complaints-dashboard"
 import { NewsDashboard } from "@/components/news-dashboard"
-import { ReportsDashboard } from "@/components/reports-dashboard"
 import { Button } from "@/components/ui/button"
 import { SidebarChat } from "@/components/sidebar-chat"
 
@@ -47,7 +46,6 @@ export default function DashboardPage() {
             <TabsTrigger value="fee-assignment">Fee Assignment</TabsTrigger>
             <TabsTrigger value="complaints">Complaints</TabsTrigger>
             <TabsTrigger value="news">News</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
           </TabsList>
           <TabsContent value="user-approval" className="space-y-4">
             <UserApprovalDashboard />
@@ -62,7 +60,6 @@ export default function DashboardPage() {
             <NewsDashboard />
           </TabsContent>
           <TabsContent value="reports" className="space-y-4">
-            <ReportsDashboard />
           </TabsContent>
         </Tabs>
       </div>
