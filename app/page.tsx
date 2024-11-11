@@ -22,7 +22,6 @@ export default function DashboardPage() {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [chatUser, setChatUser] = useState<User | null>(null)
 
-
   const handleChatClose = () => {
     setIsChatOpen(false)
     setChatUser(null)
@@ -52,7 +51,6 @@ export default function DashboardPage() {
             <TabsTrigger value="fee-assignment">Fee Assignment</TabsTrigger>
             <TabsTrigger value="complaints">Complaints</TabsTrigger>
             <TabsTrigger value="news">News</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
           </TabsList>
           <TabsContent value="user-approval" className="space-y-4">
             <UserApprovalDashboard />
