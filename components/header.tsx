@@ -1,6 +1,5 @@
 "use client"
 
-import Link from 'next/link'
 import { MainNav } from "@/components/main-nav"
 import { UserNav } from "@/components/user-nav"
 import { ModeToggle } from "@/components/mode-toggle"

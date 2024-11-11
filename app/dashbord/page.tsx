@@ -10,7 +10,6 @@ import { UserApprovalDashboard } from "@/components/user-approval-dashboard"
 import { FeeAssignmentDashboard } from "@/components/fee-assignment-dashboard"
 import { ComplaintsDashboard } from "@/components/complaints-dashboard"
 import { NewsDashboard } from "@/components/news-dashboard"
-import { ReportsDashboard } from "@/components/reports-dashboard"
 import { Button } from "@/components/ui/button"
 import { SidebarChat } from "@/components/sidebar-chat"
 
@@ -22,11 +21,6 @@ interface User {
 export default function DashboardPage() {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [chatUser, setChatUser] = useState<User | null>(null)
-
-  const handleChatOpen = (user: User) => {
-    setChatUser(user)
-    setIsChatOpen(true)
-  }
 
   const handleChatClose = () => {
     setIsChatOpen(false)
@@ -70,9 +64,6 @@ export default function DashboardPage() {
           </TabsContent>
           <TabsContent value="news" className="space-y-4">
             <NewsDashboard />
-          </TabsContent>
-          <TabsContent value="reports" className="space-y-4">
-            <ReportsDashboard />
           </TabsContent>
         </Tabs>
       </div>

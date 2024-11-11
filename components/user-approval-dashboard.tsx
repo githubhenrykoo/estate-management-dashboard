@@ -7,37 +7,44 @@ import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useToast } from "@/components/ui/use-toast"
 
-export function UserApprovalDashboard() {
-  const { toast } = useToast()
-  const [newUser, setNewUser] = useState({ name: '', email: '', phone: '', type: 'owner' })
-  const [users, setUsers] = useState([])
+interface User {
+  name: string
+  email: string
+  phone: string
+  type: string
+  status: 'pending' | 'approved' | 'rejected'
+}
 
-  const handleSubmit = (e) => {
+export function UserApprovalDashboard() {
+  const { addToast } = useToast()
+  const [newUser, setNewUser] = useState<User>({ name: '', email: '', phone: '', type: 'owner', status: 'pending' })
+  const [users, setUsers] = useState<User[]>([])  // Explicitly define the users state type
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Here you would typically send this data to your backend
     setUsers([...users, { ...newUser, status: 'pending' }])
-    setNewUser({ name: '', email: '', phone: '', type: 'owner' })
-    toast({
+    setNewUser({ name: '', email: '', phone: '', type: 'owner', status: 'pending' })
+    addToast({
       title: "User request submitted",
       description: "The user request has been submitted for approval.",
     })
   }
 
-  const handleApprove = (index) => {
+  const handleApprove = (index: number) => {  // Explicitly type 'index' as number
     const updatedUsers = [...users]
     updatedUsers[index].status = 'approved'
     setUsers(updatedUsers)
-    toast({
+    addToast({
       title: "User approved",
       description: "The user has been approved.",
     })
   }
 
-  const handleReject = (index) => {
+  const handleReject = (index: number) => {  // Explicitly type 'index' as number
     const updatedUsers = [...users]
     updatedUsers[index].status = 'rejected'
     setUsers(updatedUsers)
-    toast({
+    addToast({
       title: "User rejected",
       description: "The user has been rejected.",
     })

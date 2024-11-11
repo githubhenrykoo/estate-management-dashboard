@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { ChevronRight, ChevronLeft, Send } from 'lucide-react'
+import { ChevronRight, Send } from 'lucide-react'
 
 type Message = {
   id: number

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useCallback } from "react"
 
 type ToastProps = {
   title?: string
@@ -14,9 +14,12 @@ type Toast = ToastProps & {
 export function useToast() {
   const [toasts, setToasts] = useState<Toast[]>([])
 
+  // Add a toast
   const addToast = useCallback(
     ({ title, description, action, duration = 5000 }: ToastProps) => {
-      const id = Math.random().toString(36).substr(2, 9)
+      // Use Date.now() for better uniqueness
+      const id = Date.now().toString(36) + Math.random().toString(36).substr(2, 9)
+
       setToasts((prevToasts) => [
         ...prevToasts,
         { id, title, description, action, duration },
@@ -33,6 +36,7 @@ export function useToast() {
     []
   )
 
+  // Remove a toast by id
   const removeToast = useCallback((id: string) => {
     setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id))
   }, [])
