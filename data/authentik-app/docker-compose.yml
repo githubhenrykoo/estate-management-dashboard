@@ -1,0 +1,84 @@
+version: '3'
+
+services:
+  postgresql:
+    image: ghcr.io/goauthentik/server:2024.2.2
+    container_name: authentik-demo-1-postgresql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 5s
+    volumes:
+      - database:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: Password
+      POSTGRES_USER: Henry
+      POSTGRES_DB: authentik
+
+  redis:
+    image: ghcr.io/goauthentik/server:2024.2.2
+    container_name: authentik-demo-1-redis
+    command: --save 60 1 --loglevel warning
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
+    volumes:
+      - redis:/data
+
+  server:
+    image: ghcr.io/goauthentik/server:2024.2.2
+    container_name: authentik-demo-1-server
+    restart: unless-stopped
+    command: server
+    environment:
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__USER: Henry
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: Password
+      AUTHENTIK_SECRET_KEY: Gyqf+lNO75gOvwx8vode1S0Lhzko9b8tOZfYr06Am18T92YcyJPqC8YqhSDM6chfOyBCe0WuvkHYVoAt
+      AUTHENTIK_ERROR_REPORTING__ENABLED: true
+    volumes:
+      - ./media:/media
+      - ./custom-templates:/templates
+    ports:
+      - "9000:9000"
+      - "9443:9443"
+    depends_on:
+      - postgresql
+      - redis
+
+  worker:
+    image: ghcr.io/goauthentik/server:2024.2.2
+    container_name: authentik-demo-1-worker
+    restart: unless-stopped
+    command: worker
+    environment:
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__USER: Henry
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: Password
+      AUTHENTIK_SECRET_KEY: Gyqf+lNO75gOvwx8vode1S0Lhzko9b8tOZfYr06Am18T92YcyJPqC8YqhSDM6chfOyBCe0WuvkHYVoAt
+      AUTHENTIK_ERROR_REPORTING__ENABLED: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./media:/media
+      - ./certs:/certs
+      - ./custom-templates:/templates
+    depends_on:
+      - postgresql
+      - redis
+
+volumes:
+  database:
+    driver: local
+  redis:
+    driver: local
