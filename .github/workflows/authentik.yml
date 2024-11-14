@@ -1,29 +1,43 @@
-name: Run Authentik with Docker Compose
+name: Deploy Authentik App
 
 on:
   push:
     branches:
-      - main
+      - main  # Trigger when code is pushed to the `main` branch
+  workflow_dispatch:  # Allow manual triggers
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Set up Docker
-      uses: docker/setup-buildx-action@v2
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
 
-    - name: Install Docker Compose
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y curl
-        curl -L "https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        sudo chmod +x /usr/local/bin/docker-compose
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl
+          curl -L "https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
 
-    - name: Build and start Authentik
-      run: |
-        cd data/authentik-app
-        docker-compose up -d
+      - name: Deploy Authentik using Docker Compose
+        run: |
+          cd data/authentik-app
+          docker-compose up -d
+
+      - name: Install ngrok
+        run: |
+          curl -s https://ngrok.com/download | tar xvz
+          sudo mv ngrok /usr/local/bin
+
+      - name: Expose Authentik App with ngrok
+        run: |
+          nohup ngrok http 9000 &  # Expose the HTTP port (or use 9443 for HTTPS)
+          sleep 5  # Wait for ngrok to start
+
+      - name: Get ngrok URL
+        run: |
+          curl --silent --show-error --max-time 10 --retry 3 --retry-delay 2 http://localhost:4040/api/tunnels | jq -r .tunnels[0].public_url
